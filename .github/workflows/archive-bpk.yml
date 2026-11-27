@@ -37,7 +37,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - name: Install (browser for BPK)
         run: |
-          sudo apt-get install -y -qq xvfb >/dev/null
+          sudo apt-get install -y -qq xvfb ghostscript >/dev/null
           uv sync --extra bpk
           uv run --extra bpk scrapling install
       - name: Download, upload, map
