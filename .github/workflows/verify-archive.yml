@@ -1,0 +1,45 @@
+name: Verify archive.org copies
+
+# Checks that the files in data/mapping are on archive.org with the uploaded size and stamps them
+# with verified_at. Run it some time after archive-bpk: archive.org takes minutes to hours to
+# show an upload. Files not there yet stay unstamped and are checked again next time.
+on:
+  workflow_dispatch:
+    inputs:
+      jenis:
+        description: "Type of regulation (empty = all)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-archive
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - name: Verify
+        env:
+          JENIS: ${{ inputs.jenis }}
+        run: |
+          set -o pipefail
+          uv run --with pyyaml python scripts/verify_mapping.py $JENIS | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit stamps
+        if: always()   # keep the stamps of what passed even when something is still missing
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/mapping
+          if ! git diff --cached --quiet; then
+            git commit -qm "chore(mapping): stamp files verified on archive.org"
+            for i in 1 2 3 4 5; do
+              git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q && break
+              sleep $((i * 20))
+            done
+          fi
