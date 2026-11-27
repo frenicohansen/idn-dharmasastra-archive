@@ -40,9 +40,19 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # deletions first, in their own commit: archive-bpk picks those regulations up again
+          committed=no
+          git ls-files --deleted -z -- data/mapping | xargs -0 -r git rm --cached -q --
+          if ! git diff --cached --quiet; then
+            git commit -qm "chore(mapping): delete copies to upload again"
+            committed=yes
+          fi
           git add data/mapping
           if ! git diff --cached --quiet; then
             git commit -qm "chore(mapping): verify archive.org copies"
+            committed=yes
+          fi
+          if [ "$committed" = yes ]; then
             for i in 1 2 3 4 5; do
               git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q && break
               sleep $((i * 20))
