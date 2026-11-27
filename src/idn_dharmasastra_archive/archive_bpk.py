@@ -59,8 +59,8 @@ def upload(jenis: str, year: str, key: str, pdf: Path) -> str:
     }
     responses = internetarchive.upload(
         item, files={key: str(pdf)}, metadata=metadata, retries=5, retries_sleep=30,
-        access_key=os.environ["IA_ACCESS_KEY"], secret_key=os.environ["IA_SECRET_KEY"])
-    if not all(r.status_code == 200 for r in responses):
+        checksum=True, access_key=os.environ["IA_ACCESS_KEY"], secret_key=os.environ["IA_SECRET_KEY"])
+    if not all(r.status_code in (200, None) for r in responses):
         raise RuntimeError(f"{item}/{key}: upload rejected ({[r.status_code for r in responses]})")
     return item
 
