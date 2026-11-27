@@ -9,8 +9,7 @@ to its BPK original.
 The workflow `.github/workflows/archive-bpk.yml` (manual run) does, for one type of regulation
 (`uu`, `perppu`, `pp`, `perpres`):
 
-1. Walks BPK's listing and downloads each regulation's PDFs (BPK sits behind Cloudflare, so a
-   stealth browser is used).
+1. Walks BPK's listing and downloads each regulation's PDFs.
 2. Uploads each PDF to archive.org.
 3. Commits one mapping file per PDF to this repo.
 
