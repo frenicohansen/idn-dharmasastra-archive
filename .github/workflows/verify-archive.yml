@@ -9,6 +9,10 @@ on:
       jenis:
         description: "Type of regulation (empty = all)"
         default: ""
+      delete_missing:
+        description: "Delete the mappings of regulations with a missing or mismatched PDF, so archive-bpk uploads them again"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -27,9 +31,10 @@ jobs:
       - name: Verify
         env:
           JENIS: ${{ inputs.jenis }}
+          DELETE: ${{ inputs.delete_missing && '--delete-missing' || '' }}
         run: |
           set -o pipefail
-          uv run verify-mapping "$JENIS" | tee -a "$GITHUB_STEP_SUMMARY"
+          uv run verify-mapping "$JENIS" $DELETE | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Commit stamps
         if: always()   # keep the stamps of what passed even when something is still missing
         run: |

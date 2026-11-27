@@ -5,8 +5,12 @@ its item's metadata (https://archive.org/metadata/<item>, one request per item) 
 size with `bytes`. Passing files get `verified_at`; missing files and size mismatches are
 printed and left unstamped, so a later run checks them again.
 
-Usage: verify-mapping [jenis]    (without jenis: all of data/mapping)
-Exit status 1 when something is not (yet) on archive.org as uploaded.
+With --delete-missing, the mapping files of a regulation that has a missing or mismatched PDF are
+deleted instead, all of them (archive-bpk skips a regulation while any of its mappings exists), so
+the next archive-bpk run uploads it again.
+
+Usage: verify-mapping [jenis] [--delete-missing]    (without jenis: all of data/mapping)
+Exit status 1 when something is not (yet) on archive.org as uploaded and was not deleted.
 """
 
 from __future__ import annotations
@@ -34,6 +38,8 @@ def item_files(item: str) -> dict[str, int]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("jenis", nargs="?", default="")
+    ap.add_argument("--delete-missing", action="store_true",
+                    help="delete the mappings of regulations with a missing or mismatched PDF")
     args = ap.parse_args()
 
     folders = [MAPPING / args.jenis] if args.jenis else sorted(MAPPING.glob("*"))
@@ -45,6 +51,7 @@ def main() -> int:
                 todo[entry["archive_item"]].append((path, entry))
 
     verified = problems = 0
+    bad_regulations: set[str] = set()
     for item, entries in sorted(todo.items()):
         files = item_files(item)
         for path, entry in entries:
@@ -59,8 +66,18 @@ def main() -> int:
                 verified += 1
                 continue
             problems += 1
+            bad_regulations.add(entry["bpk_detail_url"])
 
-    print(f"done {verified} verified, {problems} not on archive.org as uploaded")
+    deleted = 0
+    if args.delete_missing and bad_regulations:
+        for path in sorted(MAPPING.glob("*/*.yaml")):
+            if yaml.safe_load(path.read_text())["bpk_detail_url"] in bad_regulations:
+                print(f"DELETED {path.stem}: will be uploaded again by archive-bpk")
+                path.unlink()
+                deleted += 1
+        problems = 0
+
+    print(f"done {verified} verified, {problems} not on archive.org as uploaded, {deleted} mapping file(s) deleted")
     return 1 if problems else 0
 
 
