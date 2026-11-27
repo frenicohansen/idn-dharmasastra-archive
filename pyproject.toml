@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Hansen Frenico", email = "16384641+frenicohansen@users.noreply.github.com" }
 ]
-requires-python = ">=3.16"
+requires-python = ">=3.12"
 dependencies = [
     "internetarchive",
     "pyyaml",
