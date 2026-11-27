@@ -9,9 +9,8 @@ to its BPK original.
 The workflow `.github/workflows/archive-bpk.yml` (manual run) does, for one type of regulation
 (`uu`, `perppu`, `pp`, `perpres`):
 
-1. Walks BPK's listing and downloads each regulation's PDFs. BPK sits behind Cloudflare, so the
-   scraping code of [dhantyo/hukum-bersih](https://github.com/dhantyo/hukum-bersih) is checked
-   out and reused.
+1. Walks BPK's listing and downloads each regulation's PDFs (BPK sits behind Cloudflare, so a
+   stealth browser is used).
 2. Uploads each PDF to archive.org.
 3. Commits one mapping file per PDF to this repo.
 
@@ -21,7 +20,7 @@ itself while work is left. Runs started with `only` or by failing do not chain.
 
 ## Ids and layout
 
-Ids follow hukum-bersih's naming rule: `<jenis>_<nomor>_<tahun>`, e.g. `uu_4_2009`. A
+Ids are `<jenis>_<nomor>_<tahun>`, e.g. `uu_4_2009`. A
 regulation with several PDFs gets `uu_4_2009_2`, `uu_4_2009_3`, …
 
 | What | Where |
@@ -45,11 +44,6 @@ bytes: 123456
 uploaded_at: '2026-11-27T10:00:00+00:00'
 ```
 
-## Setup
-
-Add two repository secrets, from <https://archive.org/account/s3.php>:
-`IA_ACCESS_KEY` and `IA_SECRET_KEY`.
-
 ## Running
 
 Actions → *Archive BPK PDFs* → Run workflow.
@@ -61,14 +55,6 @@ Actions → *Archive BPK PDFs* → Run workflow.
 | `only` | just these ids, comma-separated (e.g. `uu_4_2009,uu_31_1999`); never chains |
 
 Try `only=uu_4_2009`, `limit=1` first.
-
-The script can also run locally (needs `../hukum-bersih`, a virtual display, and the two keys
-in the environment):
-
-```sh
-xvfb-run -a uv run --project ../hukum-bersih/pipeline --extra bpk --with internetarchive \
-  python scripts/archive_bpk.py uu --only uu_4_2009
-```
 
 ## License
 

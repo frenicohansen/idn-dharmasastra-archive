@@ -5,12 +5,11 @@ archive.org item of its jenis and year, and write one mapping file per PDF:
 
     data/mapping/<jenis>/<id>.yaml
 
-Ids follow hukum-bersih's naming rule (docs/NAMING.md): <jenis>_<nomor>_<tahun> for the first PDF
+Ids: <jenis>_<nomor>_<tahun> for the first PDF
 of a regulation (uu_4_2009), <id>_2, <id>_3 for further PDFs. The id is also the file name on
 archive.org: https://archive.org/download/peraturan-indonesia-<jenis>-<tahun>/<id>.pdf
 
-Regulations with a mapping file are skipped, so runs resume. Needs the hukum-bersih package
-(--project), IA_ACCESS_KEY and IA_SECRET_KEY in the environment, and a virtual display.
+Regulations with a mapping file are skipped, so runs resume. Needs a virtual display (xvfb).
 """
 
 from __future__ import annotations

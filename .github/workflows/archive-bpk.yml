@@ -2,11 +2,9 @@ name: Archive BPK PDFs
 
 # Downloads regulation PDFs from peraturan.bpk.go.id, uploads them to archive.org and commits
 # the mapping (BPK url -> archive.org url) to data/mapping/<jenis>/<id>.yaml. Ids follow
-# hukum-bersih's naming rule (uu_4_2009). Regulations already mapped are skipped, so runs resume.
-# BPK's Cloudflare check is cleared by the scraping code of dhantyo/hukum-bersih (checked out).
+# <jenis>_<nomor>_<tahun> (uu_4_2009). Regulations already mapped are skipped, so runs resume.
 # A run is stopped at 6 h (GitHub's limit for a job); this one stops starting new regulations
 # after 5 h 25 min, commits, and starts the next run itself while work is left.
-# Secrets: IA_ACCESS_KEY, IA_SECRET_KEY (https://archive.org/account/s3.php).
 on:
   workflow_dispatch:
     inputs:
