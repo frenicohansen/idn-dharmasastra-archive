@@ -25,8 +25,8 @@ from pathlib import Path
 
 import internetarchive
 import yaml
-from hukum_bersih.sources import peraturan_bpk as bpk
-from hukum_bersih.sources.bpk_session import BASE, Session
+from . import peraturan_bpk as bpk
+from .bpk_session import BASE, Session
 
 MAPPING = Path("data/mapping")
 TYPE_TITLE = bpk.JENIS_TITLE
@@ -120,7 +120,7 @@ def main() -> int:
 
     only = {i for i in args.only.split(",") if i}
     done_ids, done_urls = mapped(args.jenis)
-    session = Session(delay=args.delay, state=Path(os.environ.get("HUKUM_BERSIH_BPK_STATE", "bpk-state.json")))
+    session = Session(delay=args.delay, state=Path(os.environ.get("BPK_STATE_FILE", "bpk-state.json")))
     uploaded, left = 0, False
     deadline = time.monotonic() + args.budget_minutes * 60
     for listing in bpk.listings(session, args.jenis):

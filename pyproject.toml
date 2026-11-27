@@ -1,0 +1,25 @@
+[project]
+name = "idn-dharmasastra-archive"
+version = "0.1.0"
+description = "Archive Indonesian regulation PDFs from peraturan.bpk.go.id on archive.org"
+readme = "README.md"
+authors = [
+    { name = "Hansen Frenico", email = "16384641+frenicohansen@users.noreply.github.com" }
+]
+requires-python = ">=3.16"
+dependencies = [
+    "internetarchive",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+# BPK sits behind Cloudflare: a stealth browser clears it, curl_cffi downloads
+bpk = ["scrapling[fetchers]>=0.5.1", "curl-cffi>=0.17.0"]
+
+[project.scripts]
+archive-bpk = "idn_dharmasastra_archive.archive_bpk:main"
+verify-mapping = "idn_dharmasastra_archive.verify_mapping:main"
+
+[build-system]
+requires = ["uv_build>=0.13.10,<0.14.0"]
+build-backend = "uv_build"

@@ -29,7 +29,7 @@ jobs:
           JENIS: ${{ inputs.jenis }}
         run: |
           set -o pipefail
-          uv run --with pyyaml python scripts/verify_mapping.py $JENIS | tee -a "$GITHUB_STEP_SUMMARY"
+          uv run verify-mapping $JENIS | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Commit stamps
         if: always()   # keep the stamps of what passed even when something is still missing
         run: |
