@@ -17,6 +17,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -45,7 +47,25 @@ def mapped(jenis: str) -> tuple[set[str], set[str]]:
     return ids, urls
 
 
-def upload(jenis: str, year: str, key: str, pdf: Path) -> str:
+REJECTED_SYNTAX = "Syntax error detected in pdf data"
+
+
+def repair_pdf(pdf: Path) -> None:
+    """Rebuild the PDF in place with Ghostscript: archive.org refuses some BPK files as broken."""
+    if shutil.which("gs") is None:
+        raise RuntimeError("Ghostscript (gs) is needed to repair PDFs that archive.org rejects")
+    rebuilt = pdf.with_suffix(".gs.pdf")
+    subprocess.run(["gs", "-o", str(rebuilt), "-sDEVICE=pdfwrite", "-dPDFSETTINGS=/prepress",
+                    "-dNOPAUSE", "-dQUIET", "-dBATCH", str(pdf)],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if rebuilt.stat().st_size <= 100:
+        raise RuntimeError(f"Ghostscript produced an empty file for {pdf.name}")
+    rebuilt.replace(pdf)
+
+
+def upload(jenis: str, year: str, key: str, pdf: Path) -> tuple[str, bool]:
+    """Upload ``pdf``; returns (item, repaired). A PDF archive.org rejects for its syntax is
+    repaired once and uploaded again, and ``repaired`` says so."""
     item = item_for(jenis, year)
     metadata = {
         "title": f"Peraturan Indonesia: {TYPE_TITLE[jenis]} Tahun {year}",
@@ -57,12 +77,21 @@ def upload(jenis: str, year: str, key: str, pdf: Path) -> str:
         "subject": ["peraturan perundang-undangan", "hukum indonesia", TYPE_TITLE[jenis].lower(),
                     jenis, f"tahun {year}"],
     }
-    responses = internetarchive.upload(
-        item, files={key: str(pdf)}, metadata=metadata, retries=5, retries_sleep=30,
-        checksum=True, access_key=os.environ["IA_ACCESS_KEY"], secret_key=os.environ["IA_SECRET_KEY"])
-    if not all(r.status_code in (200, None) for r in responses):
-        raise RuntimeError(f"{item}/{key}: upload rejected ({[r.status_code for r in responses]})")
-    return item
+    repaired = False
+    while True:
+        try:
+            responses = internetarchive.upload(
+                item, files={key: str(pdf)}, metadata=metadata, retries=5, retries_sleep=30,
+                checksum=True, access_key=os.environ["IA_ACCESS_KEY"], secret_key=os.environ["IA_SECRET_KEY"])
+        except Exception as e:
+            if repaired or REJECTED_SYNTAX not in str(e):
+                raise
+            repair_pdf(pdf)
+            repaired = True
+            continue
+        if not all(r.status_code in (200, None) for r in responses):
+            raise RuntimeError(f"{item}/{key}: upload rejected ({[r.status_code for r in responses]})")
+        return item, repaired
 
 
 def process(session, listing, jenis: str, only: set[str], done_ids: set[str]) -> list[str]:
@@ -87,16 +116,19 @@ def process(session, listing, jenis: str, only: set[str], done_ids: set[str]) ->
                 raise RuntimeError(f"{f['url']}: not a PDF")
             pdf = Path(tmp) / f"{file_id}.pdf"
             pdf.write_bytes(content)
-            item = upload(jenis, year, f"{file_id}.pdf", pdf)
+            item, repaired = upload(jenis, year, f"{file_id}.pdf", pdf)
+            uploaded = pdf.read_bytes()   # what archive.org has: differs from BPK's when repaired
             entries.append((file_id, {
                 "id": file_id,
                 "bpk_detail_url": detail_url,
                 "bpk_url": f["url"],
                 "bpk_filename": f["filename"],
+                "bpk_sha256": hashlib.sha256(content).hexdigest(),
                 "archive_item": item,
                 "archive_url": f"https://archive.org/download/{item}/{file_id}.pdf",
-                "sha256": hashlib.sha256(content).hexdigest(),
-                "bytes": len(content),
+                "sha256": hashlib.sha256(uploaded).hexdigest(),
+                "bytes": len(uploaded),
+                "repaired": repaired,
                 "uploaded_at": datetime.now(UTC).isoformat(timespec="seconds"),
             }))
     # written only once every PDF of the regulation is up, so a crash re-does the whole regulation
