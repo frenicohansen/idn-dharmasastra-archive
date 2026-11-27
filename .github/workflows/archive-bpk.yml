@@ -65,7 +65,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/mapping
           if ! git diff --cached --quiet; then
-            git commit -qm "mapping/$JENIS: archive.org copies of BPK PDFs"
+            git commit -qm "feat(mapping): add $JENIS archive.org copies of BPK PDFs"
             for i in 1 2 3 4 5; do
               git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q && break
               sleep $((i * 20))
