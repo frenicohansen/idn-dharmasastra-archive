@@ -5,12 +5,13 @@ its item's metadata (https://archive.org/metadata/<item>, one request per item) 
 size with `bytes`. Passing files get `verified_at`; missing files and size mismatches are
 printed and left unstamped, so a later run checks them again.
 
-Usage: verify_mapping.py [jenis]    (without jenis: all of data/mapping)
+Usage: verify-mapping [jenis]    (without jenis: all of data/mapping)
 Exit status 1 when something is not (yet) on archive.org as uploaded.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import urllib.request
@@ -31,7 +32,11 @@ def item_files(item: str) -> dict[str, int]:
 
 
 def main() -> int:
-    folders = [MAPPING / sys.argv[1]] if len(sys.argv) > 1 else sorted(MAPPING.glob("*"))
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("jenis", nargs="?", default="")
+    args = ap.parse_args()
+
+    folders = [MAPPING / args.jenis] if args.jenis else sorted(MAPPING.glob("*"))
     todo: dict[str, list[tuple[Path, dict]]] = defaultdict(list)
     for folder in folders:
         for path in sorted(folder.glob("*.yaml")):
@@ -54,6 +59,7 @@ def main() -> int:
                 verified += 1
                 continue
             problems += 1
+
     print(f"done {verified} verified, {problems} not on archive.org as uploaded")
     return 1 if problems else 0
 

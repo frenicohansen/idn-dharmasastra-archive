@@ -29,7 +29,7 @@ jobs:
           JENIS: ${{ inputs.jenis }}
         run: |
           set -o pipefail
-          uv run verify-mapping $JENIS | tee -a "$GITHUB_STEP_SUMMARY"
+          uv run verify-mapping "$JENIS" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Commit stamps
         if: always()   # keep the stamps of what passed even when something is still missing
         run: |
@@ -37,7 +37,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/mapping
           if ! git diff --cached --quiet; then
-            git commit -qm "chore(mapping): stamp files verified on archive.org"
+            git commit -qm "chore(mapping): verify archive.org copies"
             for i in 1 2 3 4 5; do
               git pull -q --rebase origin "${GITHUB_REF_NAME}" && git push -q && break
               sleep $((i * 20))
